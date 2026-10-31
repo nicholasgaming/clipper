@@ -4,6 +4,8 @@ Clipper is an experimental Windows system-tray app for saving instant replays an
 
 > **Experimental:** Recording boundaries are approximate and the last seconds may be missing. Verify recordings before relying on them. A full replay is available only after the buffer fills.
 
+**New here?** Follow the [step-by-step setup guide](SETUP.md), including Google Drive, optional student storage offers, and a ready-to-use prompt for Codex, Claude Code, or another AI assistant. AI assistants can also read [AGENTS.md](AGENTS.md) for project-specific guidance.
+
 ## Requirements
 
 - 64-bit Windows 10 or 11 with a supported graphics adapter and a system tray.
