@@ -34,6 +34,9 @@ try
         VideoEncoderOptions = new VideoEncoderOptions
         {
             Framerate = settings.Fps, IsHardwareEncodingEnabled = settings.HardwareEncoding, IsFixedFramerate = settings.FixedFramerate,
+            // The default buffered encoder can stop emitting fragments on a
+            // static desktop. Low latency keeps the live replay stream flowing.
+            IsLowLatencyEnabled = true,
             Bitrate = settings.Bitrate, IsFragmentedMp4Enabled = true,
             Encoder = new H264VideoEncoder { BitrateMode = H264BitrateControlMode.UnconstrainedVBR }
         }
@@ -45,17 +48,28 @@ try
     using var finished = new ManualResetEventSlim(false);
     string? failure = null;
     int firstFrameReported = 0;
+    long framesRecorded = 0;
     recorder.OnRecordingComplete += (_, _) => finished.Set();
     recorder.OnRecordingFailed += (_, e) => { failure = e.Error; finished.Set(); };
     recorder.OnStatusChanged += (_, e) => Console.Error.WriteLine("Capture status: " + e.Status);
     recorder.OnFrameRecorded += (_, e) =>
     {
+        Interlocked.Increment(ref framesRecorded);
         if (Interlocked.Exchange(ref firstFrameReported, 1) == 0)
             Console.Error.WriteLine("CAPTURE_FIRST_FRAME_MS " + e.Timestamp);
     };
     recorder.Record(stream);
     var commands = Task.Run(() => { while (Console.ReadLine() is string line) { if (line == "stop") break; } });
-    while (!finished.IsSet && !commands.IsCompleted) Thread.Sleep(100);
+    var progress = System.Diagnostics.Stopwatch.StartNew();
+    while (!finished.IsSet && !commands.IsCompleted)
+    {
+        Thread.Sleep(100);
+        if (progress.ElapsedMilliseconds >= 1000)
+        {
+            Console.Error.WriteLine($"CAPTURE_PROGRESS {Interlocked.Read(ref framesRecorded)} {stream.BytesWritten}");
+            progress.Restart();
+        }
+    }
     if (!finished.IsSet) recorder.Stop();
     if (!finished.Wait(TimeSpan.FromSeconds(15))) throw new TimeoutException("Capture could not stop cleanly");
     if (failure is not null) throw new InvalidOperationException(failure);

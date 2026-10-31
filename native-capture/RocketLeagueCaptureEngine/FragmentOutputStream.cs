@@ -9,6 +9,8 @@ internal sealed class FragmentOutputStream : Stream
     private readonly Stream destination;
     private long position;
     private long length;
+    private long bytesWritten;
+    public long BytesWritten => Interlocked.Read(ref bytesWritten);
     private readonly object gate = new();
 
     public FragmentOutputStream(Stream destination) => this.destination = destination;
@@ -45,6 +47,7 @@ internal sealed class FragmentOutputStream : Stream
             if (position == length)
             {
                 destination.Write(buffer, offset, count);
+                Interlocked.Add(ref bytesWritten, count);
                 position += count;
                 length += count;
             }

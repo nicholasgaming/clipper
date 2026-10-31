@@ -52,6 +52,7 @@ class NativeCapture(ReplayCaptureBase):
         # produced by the Media Foundation encoder before declaring a stall.
         self.stall_timeout = 20
         self._preserve_temp = False
+        self._native_progress = None
 
     def start(self):
         if self._process is not None or self._native is not None:
@@ -107,8 +108,21 @@ class NativeCapture(ReplayCaptureBase):
             elif message.startswith("Capture failed:"):
                 self._errors.append(message)
                 self._stop.set()
+            elif message.startswith("CAPTURE_PROGRESS "):
+                try:
+                    _, frames, written = message.split()
+                    self._native_progress = (int(frames), int(written))
+                except ValueError:
+                    pass
             with self._changed:
                 self._changed.notify_all()
+
+    def diagnostics(self):
+        """Capture counters only; never include device names or recorded data."""
+        return {"native_progress": self._native_progress,
+                "native_exit_code": self._native.poll() if self._native else None,
+                "segmenter_exit_code": self._process.poll() if self._process else None,
+                "last_segment": self._last_segment_number}
 
     def _retention_clock(self):
         # Segment timestamps are on the encoded media timeline, which can

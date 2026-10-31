@@ -295,6 +295,7 @@ class Controller(QObject):
         self._upload_states = {row["id"]: row["state"] for row in rows}
         if self.recorder and (self.recorder._stop.is_set() or self.recorder._process.poll() is not None):
             message = self.recorder.errors[-1] if self.recorder.errors else "Capture stopped unexpectedly."
+            self.log.error("Capture diagnostics: %s", self.recorder.diagnostics())
             if self.manual_recording: self._finish_manual_recording(interrupted=True)
             self.recorder.stop(); self.recorder = None
             self.recording_status = "Error: " + message

@@ -1,6 +1,7 @@
 import pytest
 import threading
 import time
+import io
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -41,6 +42,15 @@ def test_stalled_segment_writer_is_detected(tmp_path):
     assert not thread.is_alive()
     assert capture._stop.is_set()
     assert any("stopped producing segments" in message for message in capture.errors)
+
+
+def test_native_progress_is_recorded_without_exposing_devices_or_media():
+    capture = NativeCapture(duration=5, fps=30, ffmpeg="ffmpeg")
+    capture._native = SimpleNamespace(stderr=io.BytesIO(b"CAPTURE_PROGRESS 120 45678\nCAPTURE_PROGRESS invalid\n"), poll=lambda: None)
+    capture._native_stderr_loop()
+    assert capture.diagnostics() == {"native_progress": (120, 45678), "native_exit_code": None,
+                                     "segmenter_exit_code": None, "last_segment": -1}
+    assert not capture.errors
 
 
 def test_manual_recording_keeps_all_segments_past_replay_retention(tmp_path):
