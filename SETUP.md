@@ -78,8 +78,8 @@ To connect Drive, select **Google Drive → Connect Drive**, then complete the G
 
 1. In **Recording**, select the display and audio device you want. Choose the replay length, shortcut, frame rate and resolution, then select **Apply changes** if you made changes.
 2. Wait for the replay buffer to fill. Start a game on the selected display, then press **F8** or click **Save replay**. A notification reports whether the clip was saved.
-3. Open **Local clips** in the sidebar and play the file. New installations use `Videos\Clipper` unless you choose a different folder. Older installations keep their previous folder.
-4. If Drive is connected, check **Google Drive → Upload activity** for its upload status. An upload is verified before it is marked complete.
+3. Open **Local clips** in the sidebar and play the file. New installations use `Videos\Clipper` unless you choose a different folder. Under **General → Clips folder → Change…**, choose an existing folder or create one with any name you like. Older installations keep their previous folder.
+4. If Drive is connected, you can rename your uploads folder under **Google Drive → Drive folder name → Rename…**. This renames the existing Drive folder, keeping its contents and upload destination. Check **Upload activity** for each clip's upload status. An upload is verified before it is marked complete.
 5. Check **General → Free up space automatically**. This is enabled for new uploads by default and removes a local video after its Drive upload and local identity have been verified. Turn it off if you want to keep local copies. If uploads are not verified, the app keeps the local files.
 
 For longer recordings, use **Start recording** and **Stop recording** on the Capture page. Both replay and longer-recording boundaries are approximate.

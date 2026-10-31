@@ -41,6 +41,7 @@ The first `dotnet publish` restores the native engine's NuGet dependencies. Star
 - Choose **Start recording** and **Stop recording** for a longer video. The start and stop boundaries are approximate and the last seconds may be missing.
 - Use Recording to choose the display, resolution, frame rate, audio devices, replay duration and shortcut. Applying changes restarts capture and refills the replay buffer.
 - Videos are queued for Google Drive. Uploads are verified against the destination, size and MD5. Interrupted uploads remain queued for retry.
+- Choose or create your local clips folder under **General**, and rename the existing Google Drive upload folder under **Google Drive → Drive folder name**.
 - **Automatic local cleanup is enabled for new uploads by default.** After a verified upload, Clipper checks remote and local file identity again before deleting the local copy. Turn this off in General if you want to keep local copies. The Google Drive page also provides a confirmation-gated cleanup action for previously uploaded videos; pending, changed or unverified files are kept.
 
 ## Build and test

@@ -90,6 +90,32 @@ def _ensure_folder(service, path: Path | None = None) -> str:
     return folder_id
 
 
+def folder_name(service, path: Path | None = None) -> str | None:
+    """Read the current name without creating a folder or changing settings."""
+    with _folder_lock:
+        folder_id = read_settings(path or settings_path()).get("drive_folder_id")
+        if not folder_id:
+            return None
+        item = service.files().get(fileId=folder_id, fields="id,name,mimeType,trashed").execute()
+        if not _is_folder(item) or item["id"] != folder_id:
+            raise AuthError("The saved Google Drive folder is unavailable.")
+        return item.get("name")
+
+
+def rename_folder(service, name: str, path: Path | None = None) -> str:
+    """Rename the app's existing Drive folder without changing its identity."""
+    name = name.strip()
+    if not name or len(name) > 255 or any(ord(char) < 32 for char in name):
+        raise ValueError("Enter a folder name between 1 and 255 characters without control characters.")
+    with _folder_lock:
+        folder_id = _ensure_folder(service, path)
+        item = service.files().update(fileId=folder_id, body={"name": name},
+                                      fields="id,name,mimeType,trashed").execute()
+        if not _is_folder(item) or item["id"] != folder_id or item.get("name") != name:
+            raise AuthError("Google Drive did not confirm the folder's new name.")
+        return name
+
+
 def file_md5(path: Path) -> str:
     with path.open("rb") as file:
         return hashlib.file_digest(file, "md5").hexdigest()

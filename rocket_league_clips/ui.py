@@ -8,7 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QAbstractItemView, QButtonGroup, QCheckBox, QComboBox, QDialog, QFileDialog,
+    QAbstractItemView, QButtonGroup, QCheckBox, QComboBox, QDialog, QFileDialog, QInputDialog,
     QFrame, QHBoxLayout, QHeaderView, QLabel, QMenu, QMessageBox, QPushButton,
     QScrollArea, QStackedWidget, QTableWidget, QTableWidgetItem,
     QVBoxLayout, QWidget,
@@ -430,6 +430,16 @@ class SettingsWindow(QDialog):
         row = QHBoxLayout(); row.addWidget(label("Clips upload to your private app folder.", "Detail", True)); row.addStretch()
         row.addWidget(button("Open folder  →", self.c.open_drive, "Link")); content.addLayout(row); page.addWidget(account)
 
+        destination, content = card(20)
+        self.drive_folder_label = label(role="Detail", wrap=True)
+        row = QHBoxLayout(); row.setSpacing(16)
+        copy = QVBoxLayout(); copy.setSpacing(5)
+        copy.addWidget(label("Drive folder name", "SectionTitle")); copy.addWidget(self.drive_folder_label)
+        row.addLayout(copy, 1)
+        self.rename_drive_button = button("Rename…", self.choose_drive_name)
+        self.rename_drive_button.setToolTip("Rename the folder where Clipper uploads videos")
+        row.addWidget(self.rename_drive_button); content.addLayout(row); page.addWidget(destination)
+
         heading = QHBoxLayout(); heading.addWidget(label("UPLOAD ACTIVITY", "Eyebrow")); heading.addStretch()
         heading.addWidget(button("Retry uploads", self.c.retry_uploads, "Link"))
         more = button("", role="More", symbol="dots")
@@ -539,6 +549,17 @@ class SettingsWindow(QDialog):
             self.c.clips = Path(selected); self.c.settings["clips_folder"] = selected
             self.c.save_settings(); self.clip_path.setText(selected); self.refresh()
 
+    def choose_drive_name(self):
+        name, accepted = QInputDialog.getText(self, "Rename Drive folder",
+            "Choose a name for your Clipper folder in Google Drive:",
+            text=self.c.drive_folder_name or "Clipper")
+        if accepted:
+            name = name.strip()
+            if not name or len(name) > 255 or any(ord(char) < 32 for char in name):
+                QMessageBox.warning(self, "Clipper", "Enter a folder name between 1 and 255 characters without control characters.")
+            elif name != self.c.drive_folder_name:
+                self.c.rename_drive_folder(name)
+
     def _update_recording_clock(self):
         if self.c.manual_recording:
             elapsed = max(0, int(time.time() - self.c.manual_recording[2]))
@@ -577,6 +598,9 @@ class SettingsWindow(QDialog):
         self.drive_status.setText("Connected" if self.c.drive_status == "Connected" else "Checking…" if self.c.drive_status == "Not checked" else "Not connected")
         self.account_status.setText(self.c.drive_status)
         self.connect_button.setText("Check connection" if self.c.drive_status == "Connected" else "Connect Drive")
+        self.drive_folder_label.setText("Renaming…" if self.c.drive_folder_busy else self.c.drive_folder_name or
+                                        ("Choose a name for your uploads." if self.c.drive_status == "Connected" else "Connect Google Drive to choose a folder name."))
+        self.rename_drive_button.setEnabled(self.c.drive_status == "Connected" and not self.c.drive_folder_busy)
         self.last.setText("Latest clip  ·  " + self.c.last_clip if self.c.last_clip else "Your next highlight starts here.")
         rows = self.c.queue.list()
         pending = sum(row["state"] != "completed" for row in rows)

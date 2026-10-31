@@ -8,7 +8,7 @@ import pytest
 
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QAbstractItemView, QScrollArea
+from PySide6.QtWidgets import QApplication, QAbstractItemView, QInputDialog, QScrollArea
 
 from rocket_league_clips.ui import SettingsWindow, apply_theme
 
@@ -31,6 +31,8 @@ def window(qt_app, tmp_path):
     controller.manual_recording = None
     controller.recording_status = "Paused"
     controller.drive_status = "Disconnected"
+    controller.drive_folder_name = None
+    controller.drive_folder_busy = False
     controller.hotkey_error = None
     controller.last_clip = None
     controller.queue.list.return_value = []
@@ -139,3 +141,23 @@ def test_compact_recording_settings_keep_apply_visible_while_scrolling(window, q
     assert window.apply_button.mapTo(window, window.apply_button.rect().center()) == before
     assert window.rect().contains(before)
     assert window.mic.isVisible()
+
+
+def test_drive_folder_rename_uses_current_folder_and_custom_name(window, monkeypatch):
+    window.c.drive_status = "Connected"
+    window.c.drive_folder_name = "Old clips"
+    window.tabs.setCurrentIndex(2)
+    window.refresh()
+    assert window.drive_folder_label.text() == "Old clips"
+    def choose_name(*args, **kwargs):
+        assert kwargs["text"] == "Old clips"
+        return "  My best goals  ", True
+    monkeypatch.setattr(QInputDialog, "getText", choose_name)
+    QTest.mouseClick(window.rename_drive_button, Qt.MouseButton.LeftButton)
+    window.c.rename_drive_folder.assert_called_once_with("My best goals")
+
+
+def test_drive_folder_rename_is_disabled_when_disconnected(window):
+    window.tabs.setCurrentIndex(2)
+    window.refresh()
+    assert not window.rename_drive_button.isEnabled()

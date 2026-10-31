@@ -26,6 +26,39 @@ def test_reuses_existing_folder(tmp_path):
     service.files.return_value.create.assert_not_called()
 
 
+def test_renaming_keeps_the_same_drive_folder_and_queued_destination(tmp_path):
+    path = tmp_path / "settings.json"
+    drive.write_settings(path, {"drive_folder_id": "folder-1"})
+    service = Mock()
+    files = service.files.return_value
+    files.get.return_value.execute.return_value = {"id": "folder-1", "mimeType": drive.FOLDER_MIME, "name": "Old"}
+    files.update.return_value.execute.return_value = {"id": "folder-1", "mimeType": drive.FOLDER_MIME, "name": "My game clips"}
+    assert drive.folder_name(service, path) == "Old"
+    assert drive.rename_folder(service, "  My game clips  ", path) == "My game clips"
+    files.update.assert_called_once_with(fileId="folder-1", body={"name": "My game clips"}, fields="id,name,mimeType,trashed")
+    files.create.assert_not_called()
+    assert drive.read_settings(path)["drive_folder_id"] == "folder-1"
+
+
+@pytest.mark.parametrize("name", ["", "   ", "Bad\nname", "x" * 256])
+def test_invalid_drive_folder_names_do_not_modify_drive(tmp_path, name):
+    service = Mock()
+    with pytest.raises(ValueError):
+        drive.rename_folder(service, name, tmp_path / "settings.json")
+    service.files.assert_not_called()
+
+
+def test_unconfirmed_folder_rename_reports_failure(tmp_path):
+    path = tmp_path / "settings.json"
+    drive.write_settings(path, {"drive_folder_id": "folder-1"})
+    service = Mock()
+    service.files.return_value.get.return_value.execute.return_value = {"id": "folder-1", "mimeType": drive.FOLDER_MIME}
+    service.files.return_value.update.return_value.execute.return_value = {"id": "folder-1", "mimeType": drive.FOLDER_MIME, "name": "Old name"}
+    with pytest.raises(AuthError, match="did not confirm"):
+        drive.rename_folder(service, "New name", path)
+    assert drive.read_settings(path)["drive_folder_id"] == "folder-1"
+
+
 def test_upload_requires_destination(tmp_path):
     with pytest.raises(AuthError, match="destination folder"):
         drive.upload_and_verify(Mock(), tmp_path / "file.mp4", "")

@@ -22,7 +22,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox, QSystemTrayIcon, QMenu
 
 from rocket_league_clips.ui import SettingsWindow, app_icon, apply_theme
 from rocket_league_clips.native_capture import NativeCapture, native_engine_command
-from rocket_league_clips.drive import ensure_folder, folder_url, read_settings, upload_and_verify, verify_file, write_settings
+from rocket_league_clips.drive import ensure_folder, folder_name, folder_url, read_settings, rename_folder, upload_and_verify, verify_file, write_settings
 from rocket_league_clips.google_auth import AuthError, disconnect, drive_service, get_credentials, verify_drive_access
 from rocket_league_clips.hotkey import GlobalHotkey, HotkeyError, MOD_CONTROL, MOD_SHIFT
 from rocket_league_clips.single_instance import ActivationEvent, signal_existing
@@ -109,7 +109,7 @@ class Controller(QObject):
         self.bridge = Bridge(); self.bridge.save.connect(self.request_save); self.bridge.message.connect(self.notify); self.bridge.recording_error.connect(self.report_error)
         self.recorder = None; self.hotkey = None; self.hotkey_error = None; self.window = None; self.manual_recording = None
         previous = self.queue.list(); self.last_clip = Path(previous[-1]["local_path"]).name if previous else None
-        self.recording_status = "Starting"; self.drive_status = "Not checked"; self._save_threads = set(); self._names_lock = threading.Lock(); self._reserved = set(); self._upload_states = None
+        self.recording_status = "Starting"; self.drive_status = "Not checked"; self.drive_folder_name = None; self.drive_folder_busy = False; self._save_threads = set(); self._names_lock = threading.Lock(); self._reserved = set(); self._upload_states = None
         self._paused = False; self._retry_at = 0.0; self._restart_attempts = 0; self._upload_notices = {}; self._cleanup_next = 0.0; self._cleanup_lock = threading.Lock()
         self.tray = QSystemTrayIcon(icon("#4ade80"), self)
         self.tray.setToolTip(APP_NAME)
@@ -360,6 +360,24 @@ class Controller(QObject):
 
     def retry_uploads(self): self.queue.retry()
 
+    def rename_drive_folder(self, name):
+        if self.drive_folder_busy:
+            return
+        self.drive_folder_busy = True
+        if self.window: self.window.refresh()
+        def job():
+            try:
+                service = drive_service(get_credentials(allow_interactive=False))
+                self.drive_folder_name = rename_folder(service, name)
+                self.bridge.message.emit("Google Drive", "Folder renamed successfully.", False)
+            except (AuthError, ValueError) as exc:
+                self.bridge.message.emit("Could not rename folder", str(exc), True)
+            except Exception:
+                self.bridge.message.emit("Could not rename folder", "Check your Google Drive connection and try again.", True)
+            finally:
+                self.drive_folder_busy = False
+        threading.Thread(target=job, name="rename-drive-folder", daemon=True).start()
+
     def delete_uploaded_local(self):
         answer = QMessageBox.question(self.window, APP_NAME,
             "Permanently delete local videos that are still verified in Google Drive? Pending, changed or unverified videos will be kept.")
@@ -390,6 +408,8 @@ class Controller(QObject):
                 service = drive_service(get_credentials(allow_interactive=False))
                 verify_drive_access(service)
                 self.drive_status = "Connected"
+                try: self.drive_folder_name = folder_name(service)
+                except Exception: pass
             except Exception:
                 self.drive_status = "Offline or authorization needed"
         threading.Thread(target=job, name="google-status", daemon=True).start()
@@ -399,6 +419,8 @@ class Controller(QObject):
             try:
                 service = drive_service(get_credentials()); verify_drive_access(service); ensure_folder(service)
                 self.drive_status = "Connected"; self.queue.retry()
+                try: self.drive_folder_name = folder_name(service)
+                except Exception: pass
                 self.bridge.message.emit("Google Drive", "Connection verified.", False)
             except AuthError as exc:
                 self.drive_status = "Needs attention"; self.bridge.message.emit("Google Drive", str(exc), True)
@@ -424,7 +446,7 @@ class Controller(QObject):
     def disconnect_drive(self):
         def job():
             try:
-                disconnect(); self.drive_status = "Disconnected"
+                disconnect(); self.drive_status = "Disconnected"; self.drive_folder_name = None
                 self.bridge.message.emit("Google Drive", "Account disconnected. Uploads will wait for authentication.", False)
             except AuthError as exc:
                 self.bridge.message.emit("Google Drive", str(exc), True)
