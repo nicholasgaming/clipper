@@ -569,7 +569,7 @@ class SettingsWindow(QDialog):
 
     def refresh(self):
         status = self.c.recording_status
-        if self.c.recorder and self.c.recorder.errors: status = "Error: " + self.c.recorder.errors[-1]
+        if self.c.recorder and self.c.recorder.failure: status = "Error: " + self.c.recorder.failure
         error = status.startswith("Error")
         active = bool(self.c.recorder) and not error
         ready = active and bool(getattr(self.c.recorder, "_closed_history", ()))

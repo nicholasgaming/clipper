@@ -34,9 +34,7 @@ try
         VideoEncoderOptions = new VideoEncoderOptions
         {
             Framerate = settings.Fps, IsHardwareEncodingEnabled = settings.HardwareEncoding, IsFixedFramerate = settings.FixedFramerate,
-            // The default buffered encoder can stop emitting fragments on a
-            // static desktop. Low latency keeps the live replay stream flowing.
-            IsLowLatencyEnabled = true,
+            IsLowLatencyEnabled = false,
             Bitrate = settings.Bitrate, IsFragmentedMp4Enabled = true,
             Encoder = new H264VideoEncoder { BitrateMode = H264BitrateControlMode.UnconstrainedVBR }
         }

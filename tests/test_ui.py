@@ -55,7 +55,7 @@ def test_navigation_works_from_sidebar_and_queue_shortcut(window):
 
 def test_capture_actions_follow_video_availability_and_errors(window):
     assert not window.save_button.isEnabled()
-    window.c.recorder = SimpleNamespace(errors=[], _closed_history=[])
+    window.c.recorder = SimpleNamespace(errors=[], failure=None, _closed_history=[])
     window.refresh()
     assert window.status.text() == "Warming up"
     assert not window.record_button.isEnabled()
@@ -64,9 +64,18 @@ def test_capture_actions_follow_video_availability_and_errors(window):
     QTest.mouseClick(window.save_button, Qt.MouseButton.LeftButton)
     window.c.request_save.assert_called_once()
     window.c.recorder.errors = ["Display disconnected"]
+    window.c.recorder.failure = "Display disconnected"
     window.refresh()
     assert not window.save_button.isEnabled()
     assert "Display disconnected" in window.capture_warning.text()
+
+
+def test_old_capture_warning_does_not_disable_replay_saving(window):
+    window.c.recorder = SimpleNamespace(errors=["Old segment warning"], failure=None,
+                                        _closed_history=[(time.time(), 30)])
+    window.refresh()
+    assert window.save_button.isEnabled()
+    assert window.status.text() == "Capturing"
 
 
 def test_settings_keep_saved_offline_devices_and_apply_user_choices(window):

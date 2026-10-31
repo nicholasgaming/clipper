@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import io
 import os
 import shutil
 import subprocess
@@ -63,6 +64,20 @@ class ReplayCaptureBase:
         self._threads = []
         self._temp = None
         self._job = None
+        self._csv_offset = 0
+
+    def _read_segment_rows(self):
+        # The segmenter appends complete CSV lines. Only consume complete
+        # records, keeping reads bounded even in a multi-day capture session.
+        with self._csv.open("rb") as file:
+            file.seek(self._csv_offset)
+            data = file.read(64 * 1024)
+        end = data.rfind(b"\n") + 1
+        if not end:
+            return []
+        rows = list(csv.reader(io.StringIO(data[:end].decode("utf-8"))))
+        self._csv_offset += end
+        return rows
 
     def _stderr_loop(self):
         for raw in iter(self._process.stderr.readline, b""):
@@ -87,8 +102,7 @@ class ReplayCaptureBase:
                     continue
                 if self._started_wall is None:
                     continue
-                with self._csv.open(newline="", encoding="utf-8") as file:
-                    rows = list(csv.reader(file))
+                rows = self._read_segment_rows()
                 for row in rows:
                     if len(row) != 3:
                         continue
@@ -239,3 +253,9 @@ class ReplayCaptureBase:
     @property
     def errors(self):
         return list(self._errors)
+
+    @property
+    def failure(self):
+        if self._stop.is_set() or (self._process is not None and self._process.poll() is not None):
+            return self._errors[-1] if self._errors else "Capture stopped unexpectedly."
+        return None

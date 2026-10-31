@@ -80,8 +80,10 @@ class NativeCapture(ReplayCaptureBase):
                     "-analyzeduration", "0", "-f", "mp4", "-i", "pipe:0",
                     "-map", "0:v:0", "-map", "0:a:0", "-c", "copy", "-f", "segment",
                     "-segment_format", "matroska", "-segment_time", str(self.segment_seconds),
-                    "-reset_timestamps", "1", "-segment_list_flags", "+live",
-                    "-segment_list_size", str(max(128, int(self.duration / self.segment_seconds) + 20)),
+                    "-reset_timestamps", "1", "-segment_list_type", "csv",
+                    # Append a journal instead of replacing a live playlist.
+                    # Windows can deny replacement while a reader has it open.
+                    "-segment_list_size", "0",
                     "-segment_list", str(self._csv), str(root / "segment%08d.mkv")]
             self._process = subprocess.Popen(args, stdin=self._native.stdout, stdout=subprocess.DEVNULL,
                                              stderr=subprocess.PIPE, creationflags=CREATE_NO_WINDOW)
