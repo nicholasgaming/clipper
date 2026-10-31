@@ -1,6 +1,6 @@
 # Clipper
 
-Clipper is an experimental Windows system-tray app for saving instant replays and recording longer videos. Press a configurable shortcut (F8 by default) to save a replay locally and queue it for upload to your own Google Drive. It uses Windows Graphics Capture and Media Foundation for capture and FFmpeg to assemble clips.
+Clipper is an experimental Windows system-tray app for saving instant replays and recording longer videos from your screen, including gameplay from any game. Press a configurable shortcut (F8 by default) to save a replay locally and queue it for upload to your own Google Drive. It uses Windows Graphics Capture and Media Foundation for capture and FFmpeg to assemble clips.
 
 > **Experimental:** Recording boundaries are approximate and the last seconds may be missing. Verify recordings before relying on them. A full replay is available only after the buffer fills.
 
@@ -35,7 +35,7 @@ The first `dotnet publish` restores the native engine's NuGet dependencies. Star
 
 ## Use
 
-- Wait for the replay buffer to fill, then press **F8** or choose **Save replay**. By default, clips are saved in `Videos\Rocket League Clips`; choose a different folder in General.
+- Wait for the replay buffer to fill, then press **F8** or choose **Save replay**. New installations save clips in `Videos\Clipper`; choose a different folder in General. Existing installations continue using their previous clips folder.
 - Choose **Start recording** and **Stop recording** for a longer video. The start and stop boundaries are approximate and the last seconds may be missing.
 - Use Recording to choose the display, resolution, frame rate, audio devices, replay duration and shortcut. Applying changes restarts capture and refills the replay buffer.
 - Videos are queued for Google Drive. Uploads are verified against the destination, size and MD5. Interrupted uploads remain queued for retry.

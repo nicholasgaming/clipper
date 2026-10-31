@@ -36,8 +36,10 @@ SHORTCUTS = {"F8": (0x77, 0), "F9": (0x78, 0), "F10": (0x79, 0), "Ctrl+Shift+F8"
 
 
 def clip_folder() -> Path:
-    # Keep existing recordings and their queue paths during the rename.
-    return Path.home() / "Videos" / "Rocket League Clips"
+    videos = Path.home() / "Videos"
+    legacy = videos / "Rocket League Clips"
+    # Existing installations keep their original folder and queued paths.
+    return legacy if legacy.is_dir() else videos / "Clipper"
 
 
 def set_startup(enabled: bool):
@@ -409,8 +411,8 @@ class Controller(QObject):
             try:
                 service = drive_service(get_credentials(allow_interactive=False)); folder = ensure_folder(service)
                 with tempfile.TemporaryDirectory(prefix="rlc_upload_test_") as directory:
-                    path = Path(directory) / "Rocket League Clips upload test.txt"
-                    path.write_text("Rocket League Clips Google Drive upload test.\n", encoding="utf-8")
+                    path = Path(directory) / "Clipper upload test.txt"
+                    path.write_text("Clipper Google Drive upload test.\n", encoding="utf-8")
                     upload_and_verify(service, path, folder, mime_type="text/plain")
                 self.bridge.message.emit("Google Drive", "Test file uploaded and verified in the destination folder.", False)
             except AuthError as exc:

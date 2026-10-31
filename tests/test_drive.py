@@ -13,6 +13,7 @@ def test_creates_app_owned_folder_and_persists_id(tmp_path):
     path = tmp_path / "settings.json"
     assert drive.ensure_folder(service, path) == "folder-1"
     assert drive.read_settings(path)["drive_folder_id"] == "folder-1"
+    assert service.files.return_value.create.call_args.kwargs["body"]["name"] == "Clipper"
     assert service.files.return_value.create.call_args.kwargs["body"]["appProperties"]["purpose"] == drive.FOLDER_MARKER
 
 

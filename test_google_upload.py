@@ -18,8 +18,8 @@ def main() -> int:
         folder_id = ensure_folder(service)
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".txt", delete=False) as f:
             temp_path = Path(f.name)
-            f.write("Rocket League Clips Google Drive upload test.\n")
-        file_id = upload_and_verify(service, temp_path, folder_id, name="Rocket League Clips upload test.txt", mime_type="text/plain")
+            f.write("Clipper Google Drive upload test.\n")
+        file_id = upload_and_verify(service, temp_path, folder_id, name="Clipper upload test.txt", mime_type="text/plain")
         print("Upload verified. File ID:", file_id)
         print("Folder:", folder_url(folder_id))
         print("The small test file remains in the Drive folder.")

@@ -5,7 +5,7 @@ from rocket_league_clips.google_auth import AuthError, drive_service, get_creden
 
 
 def main() -> int:
-    print("Rocket League Clips: Google Drive authentication test")
+    print("Clipper: Google Drive authentication test")
     print("If sign-in is needed, your browser will open. The local callback expires after five minutes.")
     try:
         credentials = get_credentials()

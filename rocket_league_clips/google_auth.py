@@ -88,7 +88,7 @@ def load_saved_credentials(vault, account: str):
         info = json.loads(value)
         creds = Credentials.from_authorized_user_info(info, scopes=SCOPES)
     except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
-        raise AuthError("The stored Google token is invalid. Remove the Rocket League Clips entry in Windows Credential Manager and sign in again.") from exc
+        raise AuthError("The stored Google token is invalid. Remove the Google OAuth entry used by Clipper in Windows Credential Manager and sign in again.") from exc
     return creds
 
 

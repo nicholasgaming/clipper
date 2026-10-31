@@ -13,8 +13,9 @@ from googleapiclient.http import MediaFileUpload
 
 from rocket_league_clips.google_auth import AuthError
 
-FOLDER_NAME = "Rocket League Clips"
+FOLDER_NAME = "Clipper"
 FOLDER_MIME = "application/vnd.google-apps.folder"
+# Keep the original marker so existing app-owned folders remain discoverable.
 FOLDER_MARKER = "rocket-league-clips-folder-v1"
 _folder_lock = threading.RLock()
 

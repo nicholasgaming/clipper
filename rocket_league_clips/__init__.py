@@ -1,1 +1,1 @@
-"""Rocket League Clips application components."""
+"""Clipper application components."""
